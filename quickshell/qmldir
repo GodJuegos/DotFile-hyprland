@@ -1,0 +1,12 @@
+# ~/.config/quickshell/qmldir
+# Propósito: Registra los servicios globales (Singletons) y componentes reutilizables
+# para que cualquier módulo de la barra pueda usarlos directamente por nombre.
+
+singleton ConfigService 1.0 services/ConfigService.qml
+singleton ThemeService 1.0 services/ThemeService.qml
+singleton DateTimeService 1.0 services/DateTimeService.qml
+singleton AudioService 1.0 services/AudioService.qml
+singleton NetService 1.0 services/NetService.qml
+
+LiquidCapsule 1.0 components/LiquidCapsule.qml
+Bar 1.0 bar/Bar.qml

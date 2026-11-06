@@ -1,4 +1,5 @@
-# Ignorar todo en ~/.config por defecto (evita subir navegadores, sesiones o datos privados)
+# ~/.config/.gitignore (Versión 1.0.0)
+# Propósito: Whitelist de Git que ignora todo en ~/.config por defecto (evita subir navegadores, sesiones o datos privados) y solo permite las carpetas del proyecto.
 *
 
 # Archivos base del repositorio

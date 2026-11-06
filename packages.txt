@@ -1,0 +1,81 @@
+# ==============================================================================
+# DotFile-hyprland (Versión 1.0.0) - Lista de Dependencias (Arch / EndeavourOS)
+# Archivo: packages.txt
+# Propósito: Lista categorizada de paquetes oficiales y AUR requeridos por la v1.0.0
+# ==============================================================================
+
+# --- Core Hyprland & Wayland ---
+hyprland
+hyprpolkitagent
+xdg-desktop-portal
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gnome
+wl-clipboard
+
+# --- Quickshell & Qt6 (Barra Modular Liquid Glass + Shaders) ---
+quickshell
+qt6-base
+qt6-declarative
+qt6-wayland
+qt6-svg
+qt6-shadertools
+qt6-5compat
+qt6-multimedia
+qt6-websockets
+qt6ct
+
+# --- Red, Conectividad & Bluetooth (NetworkModule + NetworkPopup Orbital) ---
+networkmanager
+iproute2
+curl
+bluez
+bluez-utils
+
+# --- Audio, PipeWire & ALSA (AudioModule Dual Altavoz + Audífonos) ---
+pipewire
+pipewire-alsa
+pipewire-pulse
+pipewire-jack
+wireplumber
+alsa-utils
+pamixer
+pavucontrol
+playerctl
+
+# --- Interfaz, Temas, Fuentes & Lanzadores ---
+ttf-iosevka-nerd
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+noto-fonts-extra
+cantarell-fonts
+matugen
+wofi
+dart-sass
+cava
+fastfetch
+cliphist
+adw-gtk-theme
+
+# --- Terminal, Archivos & Utilidades ---
+kitty
+nemo
+brightnessctl
+ddcutil
+grim
+slurp
+satty
+wf-recorder
+gpu-screen-recorder
+tesseract
+tesseract-data-eng
+scrcpy
+git
+base-devel
+jq
+socat
+inotify-tools
+wmctrl
+duf
+glances
+tldr

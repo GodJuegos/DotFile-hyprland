@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# DotFile-hyprland - Instalador Base de Hyprland y Dependencias (Arch / EOS)
+# DotFile-hyprland (Versión 1.0.0) - Instalador de Dependencias y Quickshell
 # Autor: godjuegos (villagamer203@gmail.com)
 # Repositorio: https://github.com/GodJuegos/DotFile-hyprland.git
+# ==============================================================================
+# Propósito:
+#   1. Instala todas las dependencias de Hyprland, Quickshell (Liquid Glass),
+#      Qt6 Shaders, PipeWire/ALSA, NetworkManager y fuentes Nerd Fonts.
+#   2. Despliega las carpetas de configuración en ~/.config (hypr, quickshell,
+#      wireplumber, kitty, ski) creando un respaldo previo si ya existen.
+#   3. Configura el enrutamiento de audio ALSA/WirePlumber para evitar que
+#      los audífonos silencien los altavoces automáticamente.
 # ==============================================================================
 
 set -euo pipefail
@@ -24,7 +32,7 @@ CONFIG_DIR="${HOME}/.config"
 BACKUP_DIR="${HOME}/.config-backup-$(date +%Y%m%d-%H%M%S)"
 
 # ------------------------------------------------------------------------------
-# 1. Listas de paquetes (Pacman / Oficiales)
+# 1. Listas de paquetes (Pacman / Oficiales + Quickshell Liquid Glass)
 # ------------------------------------------------------------------------------
 PACMAN_PKGS=(
     # Core Hyprland & Wayland
@@ -34,12 +42,46 @@ PACMAN_PKGS=(
     xdg-desktop-portal-hyprland
     xdg-desktop-portal-gnome
     wl-clipboard
-    qt6ct
+
+    # Quickshell & Qt6 (Barra Modular Liquid Glass + Shaders GLSL)
+    quickshell
+    qt6-base
+    qt6-declarative
+    qt6-wayland
+    qt6-svg
+    qt6-shadertools
+    qt6-5compat
     qt6-multimedia
     qt6-websockets
+    qt6ct
 
-    # Interfaz, Shell, Lanzadores y Temas
-    quickshell
+    # Red, Speedtest y Bluetooth (NetworkPopup Orbital)
+    networkmanager
+    iproute2
+    curl
+    bluez
+    bluez-utils
+
+    # Audio, PipeWire y ALSA (Modo Dual Altavoces + Audífonos)
+    pipewire
+    pipewire-alsa
+    pipewire-pulse
+    pipewire-jack
+    wireplumber
+    alsa-utils
+    pamixer
+    pavucontrol
+    playerctl
+    brightnessctl
+    ddcutil
+
+    # Interfaz, Lanzadores, Temas y Fuentes Nerd Font
+    ttf-iosevka-nerd
+    noto-fonts
+    noto-fonts-cjk
+    noto-fonts-emoji
+    noto-fonts-extra
+    cantarell-fonts
     wofi
     matugen
     dart-sass
@@ -52,17 +94,6 @@ PACMAN_PKGS=(
     kitty
     nemo
 
-    # Audio, Multimedia y Brillo
-    pipewire-alsa
-    pipewire-pulse
-    pipewire-jack
-    wireplumber
-    pamixer
-    pavucontrol
-    playerctl
-    brightnessctl
-    ddcutil
-
     # Capturas de pantalla, Grabación y OCR
     grim
     slurp
@@ -73,7 +104,7 @@ PACMAN_PKGS=(
     tesseract-data-eng
     scrcpy
 
-    # Utilidades de Sistema y Fuentes
+    # Utilidades de Sistema
     git
     base-devel
     jq
@@ -83,33 +114,30 @@ PACMAN_PKGS=(
     duf
     glances
     tldr
-    noto-fonts
-    noto-fonts-cjk
-    noto-fonts-emoji
-    noto-fonts-extra
-    cantarell-fonts
 )
 
-# Paquetes de AUR
+# Paquetes de AUR (opcionales / complementarios)
 AUR_PKGS=(
     libastal-io-git
     libastal-git
     libastal-4-git
 )
 
-# Directorios de configuración administrados por este repo
+# Directorios de configuración administrados por este repositorio
 CONFIG_FOLDERS=(
     "hypr"
+    "quickshell"
+    "wireplumber"
     "kitty"
     "ski"
 )
 
 # ------------------------------------------------------------------------------
-# 2. Funciones de instalación
+# 2. Funciones de instalación y configuración
 # ------------------------------------------------------------------------------
 check_arch() {
     if ! command -v pacman >/dev/null 2>&1; then
-        error "Este instalador está diseñado para sistemas basados en Arch Linux (pacman)."
+        error "Este instalador está diseñado para sistemas basados en Arch Linux / EndeavourOS (pacman)."
     fi
 }
 
@@ -147,23 +175,46 @@ deploy_configs() {
 
     if [ "$script_dir" = "$CONFIG_DIR" ]; then
         info "El repositorio ya se encuentra directamente en ${CONFIG_DIR}. No es necesario copiar archivos."
-        return 0
+    else
+        info "Copiando configuraciones hacia ${CONFIG_DIR}..."
+        mkdir -p "$CONFIG_DIR"
+
+        for folder in "${CONFIG_FOLDERS[@]}"; do
+            if [ -d "${script_dir}/${folder}" ]; then
+                if [ -d "${CONFIG_DIR}/${folder}" ]; then
+                    mkdir -p "$BACKUP_DIR"
+                    warn "Respaldando ${CONFIG_DIR}/${folder} en ${BACKUP_DIR}/${folder}"
+                    mv "${CONFIG_DIR}/${folder}" "${BACKUP_DIR}/${folder}"
+                fi
+                cp -r "${script_dir}/${folder}" "${CONFIG_DIR}/${folder}"
+                success "Configuración aplicada: ${folder}"
+            fi
+        done
+    fi
+}
+
+configure_services() {
+    info "Configurando servicios de red y audio (WirePlumber / ALSA)..."
+
+    # Habilitar NetworkManager si no está activo
+    if systemctl list-unit-files | grep -q "^NetworkManager.service"; then
+        sudo systemctl enable --now NetworkManager.service >/dev/null 2>&1 || true
+        success "Servicio NetworkManager activo."
     fi
 
-    info "Copiando configuraciones hacia ${CONFIG_DIR}..."
-    mkdir -p "$CONFIG_DIR"
+    # Desactivar Auto-Mute en tarjeta ALSA Generic_1 si existe (permite Altavoces + Audífonos simultáneos)
+    if command -v amixer >/dev/null 2>&1 && amixer -c Generic_1 info >/dev/null 2>&1; then
+        amixer -c Generic_1 sset 'Auto-Mute Mode' Disabled >/dev/null 2>&1 || true
+        amixer -c Generic_1 sset 'Front' 100% unmute >/dev/null 2>&1 || true
+        amixer -c Generic_1 sset 'Headphone' 100% unmute >/dev/null 2>&1 || true
+        success "ALSA Generic_1 configurado: Auto-Mute desactivado (Altavoces + Audífonos activos)."
+    fi
 
-    for folder in "${CONFIG_FOLDERS[@]}"; do
-        if [ -d "${script_dir}/${folder}" ]; then
-            if [ -d "${CONFIG_DIR}/${folder}" ]; then
-                mkdir -p "$BACKUP_DIR"
-                warn "Respaldando ${CONFIG_DIR}/${folder} en ${BACKUP_DIR}/${folder}"
-                mv "${CONFIG_DIR}/${folder}" "${BACKUP_DIR}/${folder}"
-            fi
-            cp -r "${script_dir}/${folder}" "${CONFIG_DIR}/${folder}"
-            success "Configuración aplicada: ${folder}"
-        fi
-    done
+    # Reiniciar WirePlumber de usuario para cargar la regla 51-disable-headphone-autoswitch.conf
+    if systemctl --user is-active wireplumber >/dev/null 2>&1; then
+        systemctl --user restart wireplumber || true
+        success "WirePlumber reiniciado con la regla anti-secuestro de audífonos."
+    fi
 }
 
 # ------------------------------------------------------------------------------
@@ -182,14 +233,16 @@ main() {
             ;;
         --configs-only)
             deploy_configs
+            configure_services
             ;;
         all|*)
             install_packages
             deploy_configs
+            configure_services
             ;;
     esac
 
-    success "¡Proceso completado! Puedes reiniciar tu sesión de Hyprland."
+    success "¡Proceso completado! Puedes iniciar la barra con: quickshell -d -p ~/.config/quickshell/shell.qml"
 }
 
 main "$@"
