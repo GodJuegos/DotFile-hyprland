@@ -1,0 +1,33 @@
+# Ignorar todo en ~/.config por defecto (evita subir navegadores, sesiones o datos privados)
+*
+
+# Archivos base del repositorio
+!.gitignore
+!LICENSE
+!README.md
+!install.sh
+!packages.txt
+
+# Configuraciones de Hyprland y entorno
+!hypr/
+!hypr/**
+!kitty/
+!kitty/**
+!ski/
+!ski/**
+!wofi/
+!wofi/**
+!waybar/
+!waybar/**
+!quickshell/
+!quickshell/**
+!fastfetch/
+!fastfetch/**
+!cava/
+!cava/**
+!matugen/
+!matugen/**
+!gtk-3.0/
+!gtk-3.0/**
+!qt6ct/
+!qt6ct/**
